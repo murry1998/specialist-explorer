@@ -81,6 +81,19 @@ select.filter-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px 
 .range-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-subtle); }
 .range-input::placeholder { color: var(--text-muted); }
 
+.spec-group { display: flex; gap: 0; }
+.spec-btn {
+  padding: 6px 12px; background: var(--bg); border: 1px solid var(--border);
+  color: var(--text-dim); font-family: inherit; font-size: 12px; cursor: pointer;
+  white-space: nowrap; transition: background .12s, color .12s, border-color .12s;
+}
+.spec-btn:first-child { border-radius: 6px 0 0 6px; }
+.spec-btn:last-child { border-radius: 0 6px 6px 0; }
+.spec-btn:not(:first-child) { border-left: none; }
+.spec-btn:hover { background: var(--bg-hover); color: var(--text); }
+.spec-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.spec-btn.active + .spec-btn { border-left: 1px solid var(--accent); }
+
 .toolbar-gap { flex: 1; }
 .toolbar-sep { width: 1px; height: 26px; background: var(--border); margin: 0 2px; }
 
@@ -201,6 +214,16 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
     <span class="toolbar-label">State:</span>
     <select class="filter-select" id="filter-state"><option value="">All States</option></select>
+
+    <div class="toolbar-sep"></div>
+
+    <span class="toolbar-label">Specialty:</span>
+    <div class="spec-group" id="filter-specialty">
+      <button class="spec-btn" data-val="Neurology">Neuro</button>
+      <button class="spec-btn" data-val="Nephrology">Neph</button>
+      <button class="spec-btn" data-val="Rheumatology">Rheum</button>
+      <button class="spec-btn" data-val="Urology">Uro</button>
+    </div>
 
     <div class="toolbar-sep"></div>
 
@@ -413,6 +436,11 @@ async function init() {
     applyFilters();
   });
 
+  // Specialty toggle buttons (click toggles active, no auto-apply)
+  document.querySelectorAll('#filter-specialty .spec-btn').forEach(btn => {
+    btn.addEventListener('click', () => { btn.classList.toggle('active'); });
+  });
+
   document.getElementById('btn-clear').addEventListener('click', clearAll);
   document.getElementById('btn-export').addEventListener('click', exportCSV);
   document.getElementById('page-size').addEventListener('change', () => { currentPage = 0; renderTable(); });
@@ -459,12 +487,14 @@ function applyFilters() {
   const addrMaxStr = document.getElementById('addr-max').value.trim();
   const addrMin = addrMinStr ? parseInt(addrMinStr) : null;
   const addrMax = addrMaxStr ? parseInt(addrMaxStr) : null;
+  const selSpecs = [...document.querySelectorAll('#filter-specialty .spec-btn.active')].map(b => b.dataset.val);
 
   filteredRows = allRows.filter(r => {
     if (radius !== null && refZipCoord) {
       if (r._distanceMi === null || r._distanceMi > radius) return false;
     }
     if (state && r.State !== state) return false;
+    if (selSpecs.length > 0 && !selSpecs.includes(r.Specialty)) return false;
     if (addrMin !== null && r._providersAtAddr < addrMin) return false;
     if (addrMax !== null && r._providersAtAddr > addrMax) return false;
     return true;
@@ -482,6 +512,7 @@ function clearAll() {
   document.getElementById('filter-state').value = '';
   document.getElementById('addr-min').value = '';
   document.getElementById('addr-max').value = '';
+  document.querySelectorAll('#filter-specialty .spec-btn').forEach(b => b.classList.remove('active'));
   refZipCoord = null;
   const distCol = COLUMNS.find(c => c.key === '_distanceMi');
   distCol.visible = false;
@@ -509,6 +540,11 @@ function updateFilterTags() {
   }
   if (state) {
     addTag(container, 'State: ' + state, () => { document.getElementById('filter-state').value = ''; applyFilters(); });
+  }
+  const activeSpecs = [...document.querySelectorAll('#filter-specialty .spec-btn.active')];
+  for (const btn of activeSpecs) {
+    const spec = btn.dataset.val;
+    addTag(container, spec, () => { btn.classList.remove('active'); applyFilters(); });
   }
   if (addrMin || addrMax) {
     let label = 'Docs @ Addr: ';
