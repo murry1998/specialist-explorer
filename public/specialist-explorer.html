@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Specialist Explorer</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #ffffff;
+  --bg-alt: #f8f9fa;
+  --bg-hover: #f1f3f5;
+  --border: #dee2e6;
+  --border-light: #e9ecef;
+  --text: #212529;
+  --text-dim: #495057;
+  --text-muted: #868e96;
+  --accent: #4263eb;
+  --accent-hover: #3b5bdb;
+  --accent-subtle: rgba(66,99,235,0.07);
+  --green: #2b8a3e;
+  --red: #e03131;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+#app { display: flex; flex-direction: column; height: 100vh; }
+
+/* Header */
+#header {
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 24px; background: var(--bg);
+  border-bottom: 1px solid var(--border); height: 54px; flex-shrink: 0;
+}
+.logo { font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: 0.5px; white-space: nowrap; }
+.logo-sub { font-size: 11px; color: var(--text-muted); margin-left: -8px; }
+#header-stats { margin-left: auto; display: flex; gap: 20px; font-size: 12px; color: var(--text-dim); }
+.stat-val { color: var(--text); font-weight: 600; }
+
+/* Toolbar */
+#toolbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 24px; background: var(--bg-alt);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.toolbar-label { font-size: 12px; color: var(--text-dim); font-weight: 500; white-space: nowrap; }
+
+#zip-input {
+  width: 90px; padding: 7px 10px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text); font-family: inherit; font-size: 13px; outline: none; text-align: center;
+}
+#zip-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-subtle); }
+#zip-input::placeholder { color: var(--text-muted); }
+
+select.filter-select {
+  padding: 7px 10px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text); font-family: inherit; font-size: 13px; outline: none; cursor: pointer;
+}
+select.filter-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-subtle); }
+
+.btn {
+  padding: 7px 16px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text); font-family: inherit; font-size: 13px; cursor: pointer; white-space: nowrap;
+}
+.btn:hover { background: var(--bg-hover); border-color: #adb5bd; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 500; }
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+.toolbar-gap { flex: 1; }
+.toolbar-sep { width: 1px; height: 26px; background: var(--border); margin: 0 2px; }
+
+/* Filter Tags */
+#active-filters {
+  display: flex; gap: 6px; padding: 0 24px 10px; background: var(--bg-alt); flex-wrap: wrap; min-height: 0;
+}
+#active-filters:empty { display: none; }
+.filter-tag {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 12px; background: var(--accent-subtle); border: 1px solid rgba(66,99,235,0.2);
+  border-radius: 100px; font-size: 11px; color: var(--accent); font-weight: 500;
+}
+.filter-tag-x { cursor: pointer; font-size: 14px; line-height: 1; opacity: 0.6; }
+.filter-tag-x:hover { opacity: 1; }
+
+/* Dashboard */
+#dashboard {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px; padding: 16px 24px; background: var(--bg-alt);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.dash-card { background: var(--bg); border: 1px solid var(--border-light); border-radius: 8px; padding: 14px 18px; }
+.dash-card-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; }
+.dash-card-value { font-size: 24px; font-weight: 700; color: var(--text); }
+.dash-card-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+/* Table */
+#table-wrap { flex: 1; overflow: auto; position: relative; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead { position: sticky; top: 0; z-index: 5; }
+
+th {
+  padding: 10px 14px; background: var(--bg-alt); border-bottom: 2px solid var(--border);
+  text-align: left; font-weight: 600; color: var(--text-dim); text-transform: uppercase;
+  font-size: 10px; letter-spacing: 1px; cursor: pointer; user-select: none; white-space: nowrap;
+}
+th:hover { color: var(--text); }
+th.sort-asc::after { content: ' \u25B2'; color: var(--accent); }
+th.sort-desc::after { content: ' \u25BC'; color: var(--accent); }
+th.hidden-col { display: none; }
+
+td {
+  padding: 9px 14px; border-bottom: 1px solid var(--border-light);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px;
+}
+td.hidden-col { display: none; }
+tr:hover td { background: var(--bg-hover); }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Footer */
+#footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 24px; background: var(--bg); border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--text-dim); flex-shrink: 0; gap: 12px;
+}
+#pagination { display: flex; align-items: center; gap: 4px; }
+
+.page-btn {
+  padding: 5px 11px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text); font-family: inherit; font-size: 12px; cursor: pointer;
+}
+.page-btn:hover { background: var(--bg-hover); }
+.page-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.page-btn:disabled { opacity: 0.3; cursor: default; }
+
+/* Column Picker */
+#col-picker-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.2); z-index: 100; align-items: center; justify-content: center;
+}
+#col-picker-overlay.open { display: flex; }
+#col-picker {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+  padding: 24px; width: 380px; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+}
+#col-picker h3 { font-size: 15px; color: var(--text); margin-bottom: 16px; font-weight: 600; }
+.col-check { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; cursor: pointer; }
+.col-check input { accent-color: var(--accent); cursor: pointer; }
+.col-check:hover { color: var(--text); }
+
+/* Loading */
+#loading { display: flex; align-items: center; justify-content: center; height: 100%; font-size: 14px; color: var(--text-dim); gap: 12px; }
+.spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Responsive */
+@media (max-width: 768px) {
+  #toolbar { padding: 10px 14px; flex-wrap: wrap; }
+  #dashboard { grid-template-columns: repeat(2, 1fr); padding: 12px 14px; }
+  td, th { padding: 7px 10px; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="header">
+    <span class="logo">Specialist Explorer</span>
+    <span class="logo-sub">Non-CCM Doctors &middot; CY 2023</span>
+    <div id="header-stats"></div>
+  </div>
+
+  <div id="toolbar">
+    <span class="toolbar-label">Distance from ZIP:</span>
+    <input type="text" id="zip-input" placeholder="ZIP" maxlength="5">
+    <select class="filter-select" id="radius-select">
+      <option value="">Any Distance</option>
+      <option value="10">Within 10 mi</option>
+      <option value="25">Within 25 mi</option>
+      <option value="50">Within 50 mi</option>
+      <option value="100">Within 100 mi</option>
+      <option value="250">Within 250 mi</option>
+      <option value="500">Within 500 mi</option>
+    </select>
+    <button class="btn btn-primary" id="btn-apply">Apply Filters</button>
+    <button class="btn" id="btn-clear">Clear All</button>
+
+    <div class="toolbar-gap"></div>
+
+    <button class="btn" id="btn-columns">Columns</button>
+
+    <div class="toolbar-sep"></div>
+
+    <button class="btn btn-primary" id="btn-export">Export CSV</button>
+  </div>
+
+  <div id="active-filters"></div>
+
+  <div id="dashboard">
+    <div class="dash-card">
+      <div class="dash-card-label">Doctors Shown</div>
+      <div class="dash-card-value" id="dash-count">&mdash;</div>
+      <div class="dash-card-sub" id="dash-count-sub"></div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-card-label">States</div>
+      <div class="dash-card-value" id="dash-states">&mdash;</div>
+    </div>
+    <div class="dash-card" id="dash-distance-card" style="display:none;">
+      <div class="dash-card-label">Within Radius</div>
+      <div class="dash-card-value" id="dash-radius">&mdash;</div>
+      <div class="dash-card-sub" id="dash-radius-sub"></div>
+    </div>
+  </div>
+
+  <div id="table-wrap">
+    <div id="loading"><div class="spinner"></div> Loading doctors...</div>
+    <table id="data-table" style="display:none;">
+      <thead><tr id="table-head"></tr></thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+
+  <div id="footer">
+    <div id="row-info">&mdash;</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <select class="filter-select" id="page-size">
+        <option value="50">50 / page</option>
+        <option value="100" selected>100 / page</option>
+        <option value="250">250 / page</option>
+        <option value="500">500 / page</option>
+      </select>
+      <div id="pagination"></div>
+    </div>
+  </div>
+</div>
+
+<div id="col-picker-overlay">
+  <div id="col-picker">
+    <h3>Visible Columns</h3>
+    <div id="col-checks"></div>
+    <div style="margin-top:16px;display:flex;gap:8px;">
+      <button class="btn btn-primary" id="col-picker-done">Done</button>
+      <button class="btn" id="col-picker-all">Show All</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Column definitions
+const COLUMNS = [
+  { key: 'NPI',                 label: 'NPI',           visible: true,  numeric: false },
+  { key: 'First_Name',         label: 'First Name',    visible: true,  numeric: false },
+  { key: 'Last_Name',          label: 'Last Name',     visible: true,  numeric: false },
+  { key: 'Specialty',          label: 'Specialty',     visible: true,  numeric: false },
+  { key: 'Credentials',        label: 'Credentials',   visible: false, numeric: false },
+  { key: 'Facility_Name',     label: 'Facility',      visible: true,  numeric: false },
+  { key: 'Street_1',           label: 'Street',        visible: true,  numeric: false },
+  { key: 'Street_2',           label: 'Street 2',      visible: false, numeric: false },
+  { key: 'City',               label: 'City',          visible: true,  numeric: false },
+  { key: 'State',              label: 'State',         visible: true,  numeric: false },
+  { key: 'Zip',                label: 'ZIP',           visible: true,  numeric: false },
+  { key: 'Providers_At_Address', label: 'Docs @ Addr', visible: true,  numeric: true },
+  { key: '_distanceMi',        label: 'Distance (mi)', visible: false, numeric: true, dynamic: true },
+];
+
+// State
+let allRows = [];
+let filteredRows = [];
+let currentPage = 0;
+let sortCol = null;
+let sortDir = 'asc';
+let zipCoords = {};
+let refZipCoord = null;
+
+// CSV parser
+function parseCSV(text) {
+  const lines = text.split('\n');
+  if (lines.length < 2) return [];
+  const headers = parseCSVLine(lines[0].replace(/\r$/, '')).map(h => h.trim());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const vals = parseCSVLine(line);
+    const row = {};
+    for (let j = 0; j < headers.length; j++) row[headers[j]] = vals[j] || '';
+    if (row.Provider_Type !== 'Doctor') continue;
+    row._distanceMi = null;
+    rows.push(row);
+  }
+
+  // Recompute doctors-at-address counts
+  const addrCount = {};
+  for (const r of rows) {
+    const key = [r.Street_1, r.City, r.State, r.Zip].join('|').toLowerCase();
+    addrCount[key] = (addrCount[key] || 0) + 1;
+  }
+  for (const r of rows) {
+    const key = [r.Street_1, r.City, r.State, r.Zip].join('|').toLowerCase();
+    r.Providers_At_Address = String(addrCount[key]);
+    r._providersAtAddr = addrCount[key];
+  }
+
+  return rows;
+}
+
+function parseCSVLine(line) {
+  const result = []; let current = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQ) {
+      if (ch === '"' && line[i+1] === '"') { current += '"'; i++; }
+      else if (ch === '"') inQ = false;
+      else current += ch;
+    } else {
+      if (ch === '"') inQ = true;
+      else if (ch === ',') { result.push(current); current = ''; }
+      else current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+// Haversine
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 3958.8;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function computeDistances() {
+  const zipVal = document.getElementById('zip-input').value.trim();
+  const distCol = COLUMNS.find(c => c.key === '_distanceMi');
+  if (zipVal.length === 5 && zipCoords[zipVal]) {
+    refZipCoord = zipCoords[zipVal];
+    distCol.visible = true;
+    for (const row of allRows) {
+      const coord = zipCoords[row.Zip];
+      row._distanceMi = coord ? Math.round(haversine(refZipCoord.lat, refZipCoord.lng, coord.lat, coord.lng) * 10) / 10 : null;
+    }
+  } else {
+    refZipCoord = null;
+    distCol.visible = false;
+    for (const row of allRows) row._distanceMi = null;
+  }
+  buildTableHead();
+  buildColPicker();
+}
+
+// Init
+async function init() {
+  const base = window.location.protocol === 'file:' ? './data/' : '/data/';
+
+  const [csvResp, zipResp] = await Promise.all([
+    fetch(base + 'non_ccm_specialists.csv'),
+    fetch(base + 'zip_coords.json').catch(() => null),
+  ]);
+
+  const csvText = await csvResp.text();
+  allRows = parseCSV(csvText);
+
+  if (zipResp && zipResp.ok) {
+    try { zipCoords = await zipResp.json(); } catch (e) { zipCoords = {}; }
+  }
+
+  buildTableHead();
+  buildColPicker();
+  applyFilters();
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('data-table').style.display = '';
+
+  // Apply Filters button
+  document.getElementById('btn-apply').addEventListener('click', () => {
+    const zipInput = document.getElementById('zip-input');
+    zipInput.value = zipInput.value.replace(/\D/g, '').slice(0, 5);
+    computeDistances();
+    currentPage = 0;
+    applyFilters();
+  });
+
+  document.getElementById('btn-clear').addEventListener('click', clearAll);
+  document.getElementById('btn-export').addEventListener('click', exportCSV);
+  document.getElementById('page-size').addEventListener('change', () => { currentPage = 0; renderTable(); });
+
+  // Column picker
+  document.getElementById('btn-columns').addEventListener('click', () => {
+    document.getElementById('col-picker-overlay').classList.add('open');
+  });
+  document.getElementById('col-picker-done').addEventListener('click', () => {
+    document.getElementById('col-picker-overlay').classList.remove('open');
+    syncColumnVisibility();
+    renderTable();
+  });
+  document.getElementById('col-picker-all').addEventListener('click', () => {
+    document.querySelectorAll('#col-checks input').forEach(cb => cb.checked = true);
+  });
+  document.getElementById('col-picker-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      document.getElementById('col-picker-overlay').classList.remove('open');
+      syncColumnVisibility();
+      renderTable();
+    }
+  });
+}
+
+// Filtering
+function applyFilters() {
+  const radiusStr = document.getElementById('radius-select').value;
+  const radius = radiusStr ? parseFloat(radiusStr) : null;
+
+  filteredRows = allRows.filter(r => {
+    if (radius !== null && refZipCoord) {
+      if (r._distanceMi === null || r._distanceMi > radius) return false;
+    }
+    return true;
+  });
+
+  if (sortCol !== null) applySortToFiltered();
+  updateDashboard();
+  updateFilterTags();
+  renderTable();
+}
+
+function clearAll() {
+  document.getElementById('zip-input').value = '';
+  document.getElementById('radius-select').value = '';
+  refZipCoord = null;
+  const distCol = COLUMNS.find(c => c.key === '_distanceMi');
+  distCol.visible = false;
+  for (const row of allRows) row._distanceMi = null;
+  buildTableHead();
+  buildColPicker();
+  currentPage = 0;
+  applyFilters();
+}
+
+function updateFilterTags() {
+  const container = document.getElementById('active-filters');
+  container.innerHTML = '';
+  const radius = document.getElementById('radius-select').value;
+  const zip = document.getElementById('zip-input').value.trim();
+
+  if (zip && refZipCoord) {
+    addTag(container, 'ZIP: ' + zip, () => { document.getElementById('zip-input').value = ''; computeDistances(); applyFilters(); });
+  }
+  if (radius && refZipCoord) {
+    addTag(container, 'Within ' + radius + ' mi', () => { document.getElementById('radius-select').value = ''; applyFilters(); });
+  }
+}
+
+function addTag(container, text, onRemove) {
+  const tag = document.createElement('div');
+  tag.className = 'filter-tag';
+  tag.innerHTML = text + ' <span class="filter-tag-x">&times;</span>';
+  tag.querySelector('.filter-tag-x').addEventListener('click', onRemove);
+  container.appendChild(tag);
+}
+
+// Sorting
+function handleSort(colIndex) {
+  if (sortCol === colIndex) {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortCol = colIndex;
+    sortDir = 'asc';
+  }
+  document.querySelectorAll('#table-head th').forEach((th, i) => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (i === sortCol) th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
+  applySortToFiltered();
+  currentPage = 0;
+  renderTable();
+}
+
+function applySortToFiltered() {
+  const col = COLUMNS[sortCol];
+  const key = col.key;
+  const numeric = col.numeric;
+  const dir = sortDir === 'asc' ? 1 : -1;
+
+  filteredRows.sort((a, b) => {
+    if (numeric) {
+      const va = (key === '_distanceMi') ? (a._distanceMi ?? 999999) :
+                 (key === 'Providers_At_Address') ? a._providersAtAddr :
+                 (parseFloat(a[key]) || 0);
+      const vb = (key === '_distanceMi') ? (b._distanceMi ?? 999999) :
+                 (key === 'Providers_At_Address') ? b._providersAtAddr :
+                 (parseFloat(b[key]) || 0);
+      return (va - vb) * dir;
+    } else {
+      const va = (a[key] || '').toLowerCase();
+      const vb = (b[key] || '').toLowerCase();
+      return va < vb ? -dir : va > vb ? dir : 0;
+    }
+  });
+}
+
+// Dashboard
+function updateDashboard() {
+  const rows = filteredRows;
+  const total = allRows.length;
+  const count = rows.length;
+  const stateSet = new Set();
+  for (const r of rows) stateSet.add(r.State);
+
+  document.getElementById('dash-count').textContent = count.toLocaleString();
+  document.getElementById('dash-count-sub').textContent = count < total ? 'of ' + total.toLocaleString() + ' total' : 'total doctors';
+  document.getElementById('dash-states').textContent = stateSet.size;
+
+  const distCard = document.getElementById('dash-distance-card');
+  const radius = document.getElementById('radius-select').value;
+  if (refZipCoord && radius) {
+    distCard.style.display = '';
+    document.getElementById('dash-radius').textContent = count.toLocaleString();
+    document.getElementById('dash-radius-sub').textContent = 'within ' + radius + ' mi of ' + document.getElementById('zip-input').value;
+  } else {
+    distCard.style.display = 'none';
+  }
+
+  document.getElementById('header-stats').innerHTML =
+    '<span>Showing <span class="stat-val">' + count.toLocaleString() + '</span> doctors</span>' +
+    '<span><span class="stat-val">' + stateSet.size + '</span> states</span>';
+}
+
+// Table
+function buildTableHead() {
+  const tr = document.getElementById('table-head');
+  tr.innerHTML = '';
+  COLUMNS.forEach((col, i) => {
+    const th = document.createElement('th');
+    th.textContent = col.label;
+    th.addEventListener('click', () => handleSort(i));
+    if (!col.visible) th.classList.add('hidden-col');
+    tr.appendChild(th);
+  });
+}
+
+function renderTable() {
+  const pageSize = parseInt(document.getElementById('page-size').value);
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  if (currentPage >= totalPages) currentPage = totalPages - 1;
+  if (currentPage < 0) currentPage = 0;
+
+  const start = currentPage * pageSize;
+  const end = Math.min(start + pageSize, filteredRows.length);
+  const pageRows = filteredRows.slice(start, end);
+
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+
+  for (const row of pageRows) {
+    const tr = document.createElement('tr');
+    for (const col of COLUMNS) {
+      const td = document.createElement('td');
+      if (!col.visible) td.classList.add('hidden-col');
+      if (col.key === '_distanceMi') {
+        td.classList.add('num');
+        td.textContent = row._distanceMi !== null ? row._distanceMi.toFixed(1) : '';
+      } else if (col.numeric) {
+        td.classList.add('num');
+        td.textContent = (parseFloat(row[col.key]) || 0).toLocaleString();
+      } else {
+        td.textContent = row[col.key] || '';
+      }
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+
+  document.getElementById('row-info').textContent = filteredRows.length === 0
+    ? 'No matching doctors'
+    : 'Rows ' + (start+1).toLocaleString() + '\u2013' + end.toLocaleString() + ' of ' + filteredRows.length.toLocaleString();
+
+  renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+  const container = document.getElementById('pagination');
+  container.innerHTML = '';
+
+  const addBtn = (label, page, disabled, active) => {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (active ? ' active' : '');
+    btn.textContent = label;
+    btn.disabled = disabled;
+    btn.addEventListener('click', () => { currentPage = page; renderTable(); document.getElementById('table-wrap').scrollTop = 0; });
+    container.appendChild(btn);
+  };
+
+  addBtn('\u00AB', 0, currentPage === 0);
+  addBtn('\u2039', currentPage - 1, currentPage === 0);
+
+  let startPage = Math.max(0, currentPage - 3);
+  let endPage = Math.min(totalPages - 1, currentPage + 3);
+
+  if (startPage > 0) {
+    addBtn('1', 0, false, currentPage === 0);
+    if (startPage > 1) {
+      const dots = document.createElement('span');
+      dots.textContent = '\u2026'; dots.style.cssText = 'padding:0 4px;color:var(--text-muted)';
+      container.appendChild(dots);
+    }
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    if (i === 0 && startPage > 0) continue;
+    addBtn(String(i + 1), i, false, i === currentPage);
+  }
+
+  if (endPage < totalPages - 1) {
+    if (endPage < totalPages - 2) {
+      const dots = document.createElement('span');
+      dots.textContent = '\u2026'; dots.style.cssText = 'padding:0 4px;color:var(--text-muted)';
+      container.appendChild(dots);
+    }
+    addBtn(String(totalPages), totalPages - 1, false, currentPage === totalPages - 1);
+  }
+
+  addBtn('\u203A', currentPage + 1, currentPage >= totalPages - 1);
+  addBtn('\u00BB', totalPages - 1, currentPage >= totalPages - 1);
+}
+
+// Column picker
+function buildColPicker() {
+  const container = document.getElementById('col-checks');
+  container.innerHTML = '';
+  COLUMNS.forEach((col, i) => {
+    const label = document.createElement('label');
+    label.className = 'col-check';
+    label.innerHTML = '<input type="checkbox" data-col="' + i + '" ' + (col.visible ? 'checked' : '') + '> ' + col.label;
+    container.appendChild(label);
+  });
+}
+
+function syncColumnVisibility() {
+  document.querySelectorAll('#col-checks input').forEach(cb => {
+    const i = parseInt(cb.dataset.col);
+    COLUMNS[i].visible = cb.checked;
+  });
+  const ths = document.querySelectorAll('#table-head th');
+  ths.forEach((th, i) => th.classList.toggle('hidden-col', !COLUMNS[i].visible));
+  const trs = document.querySelectorAll('#table-body tr');
+  trs.forEach(tr => {
+    const tds = tr.querySelectorAll('td');
+    tds.forEach((td, i) => td.classList.toggle('hidden-col', !COLUMNS[i].visible));
+  });
+}
+
+// Export CSV
+function exportCSV() {
+  const visibleCols = COLUMNS.filter(c => c.visible);
+  const header = visibleCols.map(c => c.key === '_distanceMi' ? 'Distance_Mi' : c.key).join(',');
+  const lines = [header];
+
+  for (const row of filteredRows) {
+    const vals = visibleCols.map(c => {
+      let v = c.key === '_distanceMi' ? (row._distanceMi !== null ? row._distanceMi.toFixed(1) : '') : (row[c.key] || '');
+      if (String(v).includes(',') || String(v).includes('"') || String(v).includes('\n')) {
+        v = '"' + String(v).replace(/"/g, '""') + '"';
+      }
+      return v;
+    });
+    lines.push(vals.join(','));
+  }
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'specialist_export.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Boot
+init().catch(err => {
+  document.getElementById('loading').innerHTML = '<span style="color:var(--red);">Failed to load data: ' + err.message + '</span>';
+  console.error(err);
+});
+</script>
+</body>
+</html>
