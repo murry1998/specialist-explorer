@@ -47,7 +47,11 @@ TARGET_SPECIALTIES = ["Neurology", "Nephrology", "Rheumatology", "Urology"]
 
 CCM_CODES = ["99490", "99491", "99487", "99489", "99437", "99439"]
 
-HEALTH_SYSTEM_THRESHOLD = 10  # providers per facility name
+# Practice type tier thresholds
+TIER_SMALL_GROUP = 2        # 2+ providers = Small Group
+TIER_LARGE_GROUP = 10       # 10+ providers = Large Group
+TIER_HEALTH_SYSTEM = 50     # 50+ providers = Health System
+MULTI_ADDRESS_THRESHOLD = 5 # 5+ addresses = upgrade one tier
 
 # NP/PA credential patterns
 NP_PA_PATTERNS = [
@@ -404,28 +408,67 @@ def main():
     # ══════════════════════════════════════════════════════════════════════
     # STEP 5: Classify Practice_Type (Health System vs Independent)
     # ══════════════════════════════════════════════════════════════════════
-    print(f"\n[Step 5/6] Classifying practice type (threshold: {HEALTH_SYSTEM_THRESHOLD}+ providers)...")
+    print(f"\n[Step 5/6] Classifying practice type (multi-tier with address correction)...")
 
-    # Count ALL providers per facility name (not just doctors)
+    # Count ALL providers per facility name
     facility_counts = {}
     for row in rows:
         fn = row["Facility_Name"].strip()
         if fn:
             facility_counts[fn] = facility_counts.get(fn, 0) + 1
 
-    health_system_count = 0
-    independent_count = 0
+    # Count distinct addresses per facility name
+    facility_addresses = {}
     for row in rows:
         fn = row["Facility_Name"].strip()
-        if fn and facility_counts.get(fn, 0) >= HEALTH_SYSTEM_THRESHOLD:
-            row["Practice_Type"] = "Health System"
-            health_system_count += 1
-        else:
-            row["Practice_Type"] = "Independent"
-            independent_count += 1
+        if fn:
+            addr_key = normalize_addr(row["Street_1"], row["City"], row["State"], row["Zip"])
+            if fn not in facility_addresses:
+                facility_addresses[fn] = set()
+            facility_addresses[fn].add(addr_key)
 
-    print(f"  Health System: {health_system_count:,} ({100*health_system_count/len(rows):.1f}%)")
-    print(f"  Independent:   {independent_count:,} ({100*independent_count/len(rows):.1f}%)")
+    facility_addr_counts = {fn: len(addrs) for fn, addrs in facility_addresses.items()}
+
+    def classify_practice(provider_count, address_count):
+        """Multi-tier classification with multi-address upgrade."""
+        if provider_count >= TIER_HEALTH_SYSTEM:
+            base = "Health System"
+        elif provider_count >= TIER_LARGE_GROUP:
+            base = "Large Group"
+        elif provider_count >= TIER_SMALL_GROUP:
+            base = "Small Group"
+        else:
+            base = "Solo Practice"
+
+        # 5+ distinct addresses → upgrade one tier
+        if address_count >= MULTI_ADDRESS_THRESHOLD:
+            upgrade = {
+                "Solo Practice": "Small Group",
+                "Small Group": "Large Group",
+                "Large Group": "Health System",
+                "Health System": "Health System",
+            }
+            return upgrade[base]
+
+        return base
+
+    # Apply classification
+    tier_counts = {}
+    for row in rows:
+        fn = row["Facility_Name"].strip()
+        if fn:
+            pcount = facility_counts.get(fn, 1)
+            acount = facility_addr_counts.get(fn, 1)
+            practice_type = classify_practice(pcount, acount)
+        else:
+            practice_type = "Solo Practice"
+        row["Practice_Type"] = practice_type
+        tier_counts[practice_type] = tier_counts.get(practice_type, 0) + 1
+
+    for tier in ["Solo Practice", "Small Group", "Large Group", "Health System"]:
+        count = tier_counts.get(tier, 0)
+        pct = 100 * count / len(rows)
+        print(f"  {tier}: {count:,} ({pct:.1f}%)")
 
     # ══════════════════════════════════════════════════════════════════════
     # STEP 6: Write output files
@@ -456,7 +499,7 @@ def main():
     print(f"{'=' * 70}")
     print(f"Total providers: {len(rows):,}")
     print(f"Bills CCM: {ccm_count:,} | Non-CCM: {len(rows) - ccm_count:,}")
-    print(f"Health System: {health_system_count:,} | Independent: {independent_count:,}")
+    print(f"Practice Types: {' | '.join(f'{t}: {tier_counts.get(t, 0):,}' for t in ['Solo Practice', 'Small Group', 'Large Group', 'Health System'])}")
 
     print(f"\nBy specialty:")
     spec_counts = {}

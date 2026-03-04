@@ -234,6 +234,20 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
     <div class="toolbar-sep"></div>
 
+    <span class="toolbar-label">Benes:</span>
+    <input type="text" id="benes-min" class="range-input" placeholder="Min" maxlength="6">
+    <span class="toolbar-label">&ndash;</span>
+    <input type="text" id="benes-max" class="range-input" placeholder="Max" maxlength="6">
+
+    <div class="toolbar-sep"></div>
+
+    <span class="toolbar-label">Services:</span>
+    <input type="text" id="srvcs-min" class="range-input" placeholder="Min" maxlength="8">
+    <span class="toolbar-label">&ndash;</span>
+    <input type="text" id="srvcs-max" class="range-input" placeholder="Max" maxlength="8">
+
+    <div class="toolbar-sep"></div>
+
     <span class="toolbar-label">CCM:</span>
     <select class="filter-select" id="filter-ccm">
       <option value="">All</option>
@@ -246,7 +260,9 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
     <span class="toolbar-label">Practice:</span>
     <select class="filter-select" id="filter-practice">
       <option value="">All</option>
-      <option value="Independent">Independent</option>
+      <option value="Solo Practice">Solo Practice</option>
+      <option value="Small Group">Small Group</option>
+      <option value="Large Group">Large Group</option>
       <option value="Health System">Health System</option>
     </select>
 
@@ -533,6 +549,14 @@ function applyFilters() {
   const addrMaxStr = document.getElementById('addr-max').value.trim();
   const addrMin = addrMinStr ? parseInt(addrMinStr) : null;
   const addrMax = addrMaxStr ? parseInt(addrMaxStr) : null;
+  const benesMinStr = document.getElementById('benes-min').value.trim();
+  const benesMaxStr = document.getElementById('benes-max').value.trim();
+  const benesMin = benesMinStr ? parseInt(benesMinStr) : null;
+  const benesMax = benesMaxStr ? parseInt(benesMaxStr) : null;
+  const srvcsMinStr = document.getElementById('srvcs-min').value.trim();
+  const srvcsMaxStr = document.getElementById('srvcs-max').value.trim();
+  const srvcsMin = srvcsMinStr ? parseInt(srvcsMinStr) : null;
+  const srvcsMax = srvcsMaxStr ? parseInt(srvcsMaxStr) : null;
   const selSpecs = [...document.querySelectorAll('#filter-specialty .spec-btn.active')].map(b => b.dataset.val);
   const ccmFilter = document.getElementById('filter-ccm').value;
   const practiceFilter = document.getElementById('filter-practice').value;
@@ -546,6 +570,10 @@ function applyFilters() {
     if (selSpecs.length > 0 && !selSpecs.includes(r.Specialty)) return false;
     if (addrMin !== null && r._providersAtAddr < addrMin) return false;
     if (addrMax !== null && r._providersAtAddr > addrMax) return false;
+    if (benesMin !== null && r._totBenes < benesMin) return false;
+    if (benesMax !== null && r._totBenes > benesMax) return false;
+    if (srvcsMin !== null && r._totSrvcs < srvcsMin) return false;
+    if (srvcsMax !== null && r._totSrvcs > srvcsMax) return false;
     if (ccmFilter && r.Bills_CCM !== ccmFilter) return false;
     if (practiceFilter && r.Practice_Type !== practiceFilter) return false;
     if (settingFilter && r.Setting !== settingFilter) return false;
@@ -564,6 +592,10 @@ function clearAll() {
   document.getElementById('filter-state').value = '';
   document.getElementById('addr-min').value = '';
   document.getElementById('addr-max').value = '';
+  document.getElementById('benes-min').value = '';
+  document.getElementById('benes-max').value = '';
+  document.getElementById('srvcs-min').value = '';
+  document.getElementById('srvcs-max').value = '';
   document.querySelectorAll('#filter-specialty .spec-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('filter-ccm').value = '';
   document.getElementById('filter-practice').value = '';
@@ -586,6 +618,10 @@ function updateFilterTags() {
   const state = document.getElementById('filter-state').value;
   const addrMin = document.getElementById('addr-min').value.trim();
   const addrMax = document.getElementById('addr-max').value.trim();
+  const benesMin = document.getElementById('benes-min').value.trim();
+  const benesMax = document.getElementById('benes-max').value.trim();
+  const srvcsMin = document.getElementById('srvcs-min').value.trim();
+  const srvcsMax = document.getElementById('srvcs-max').value.trim();
 
   if (zip && refZipCoord) {
     addTag(container, 'ZIP: ' + zip, () => { document.getElementById('zip-input').value = ''; computeDistances(); applyFilters(); });
@@ -607,6 +643,20 @@ function updateFilterTags() {
     else if (addrMin) label += addrMin + '+';
     else label += '1\u2013' + addrMax;
     addTag(container, label, () => { document.getElementById('addr-min').value = ''; document.getElementById('addr-max').value = ''; applyFilters(); });
+  }
+  if (benesMin || benesMax) {
+    let label = 'Benes: ';
+    if (benesMin && benesMax) label += benesMin + '\u2013' + benesMax;
+    else if (benesMin) label += benesMin + '+';
+    else label += '1\u2013' + benesMax;
+    addTag(container, label, () => { document.getElementById('benes-min').value = ''; document.getElementById('benes-max').value = ''; applyFilters(); });
+  }
+  if (srvcsMin || srvcsMax) {
+    let label = 'Services: ';
+    if (srvcsMin && srvcsMax) label += srvcsMin + '\u2013' + srvcsMax;
+    else if (srvcsMin) label += srvcsMin + '+';
+    else label += '1\u2013' + srvcsMax;
+    addTag(container, label, () => { document.getElementById('srvcs-min').value = ''; document.getElementById('srvcs-max').value = ''; applyFilters(); });
   }
   const ccmFilter = document.getElementById('filter-ccm').value;
   if (ccmFilter) {
@@ -693,10 +743,14 @@ function updateDashboard() {
   document.getElementById('dash-ccm-sub').textContent = 'of ' + count.toLocaleString() + ' bill CCM';
 
   // Practice type breakdown
-  let indep = 0;
-  for (const r of rows) if (r.Practice_Type === 'Independent') indep++;
-  document.getElementById('dash-practice').textContent = indep.toLocaleString();
-  document.getElementById('dash-practice-sub').textContent = 'independent / ' + (count - indep).toLocaleString() + ' health system';
+  const practiceTypes = {};
+  for (const r of rows) practiceTypes[r.Practice_Type] = (practiceTypes[r.Practice_Type] || 0) + 1;
+  const solo = practiceTypes['Solo Practice'] || 0;
+  const smallGrp = practiceTypes['Small Group'] || 0;
+  const largeGrp = practiceTypes['Large Group'] || 0;
+  const hs = practiceTypes['Health System'] || 0;
+  document.getElementById('dash-practice').textContent = (solo + smallGrp).toLocaleString();
+  document.getElementById('dash-practice-sub').textContent = 'solo+small / ' + (largeGrp + hs).toLocaleString() + ' large+system';
 
   const distCard = document.getElementById('dash-distance-card');
   const radius = document.getElementById('radius-select').value;
