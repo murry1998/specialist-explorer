@@ -47,7 +47,7 @@ html, body {
 
 /* Toolbar */
 #toolbar {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   padding: 12px 24px; background: var(--bg-alt);
   border-bottom: 1px solid var(--border); flex-shrink: 0;
 }
@@ -193,7 +193,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 <div id="app">
   <div id="header">
     <span class="logo">Specialist Explorer</span>
-    <span class="logo-sub">Non-CCM Doctors &middot; CY 2023</span>
+    <span class="logo-sub">Specialist Doctors &middot; CY 2023</span>
     <div id="header-stats"></div>
   </div>
 
@@ -234,6 +234,34 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
     <div class="toolbar-sep"></div>
 
+    <span class="toolbar-label">CCM:</span>
+    <select class="filter-select" id="filter-ccm">
+      <option value="">All</option>
+      <option value="Yes">Bills CCM</option>
+      <option value="No">Non-CCM</option>
+    </select>
+
+    <div class="toolbar-sep"></div>
+
+    <span class="toolbar-label">Practice:</span>
+    <select class="filter-select" id="filter-practice">
+      <option value="">All</option>
+      <option value="Independent">Independent</option>
+      <option value="Health System">Health System</option>
+    </select>
+
+    <div class="toolbar-sep"></div>
+
+    <span class="toolbar-label">Setting:</span>
+    <select class="filter-select" id="filter-setting">
+      <option value="">All</option>
+      <option value="Urban">Urban</option>
+      <option value="Suburban">Suburban</option>
+      <option value="Rural">Rural</option>
+    </select>
+
+    <div class="toolbar-sep"></div>
+
     <button class="btn btn-primary" id="btn-apply">Apply Filters</button>
     <button class="btn" id="btn-clear">Clear All</button>
 
@@ -257,6 +285,16 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
     <div class="dash-card">
       <div class="dash-card-label">States</div>
       <div class="dash-card-value" id="dash-states">&mdash;</div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-card-label">Bills CCM</div>
+      <div class="dash-card-value" id="dash-ccm">&mdash;</div>
+      <div class="dash-card-sub" id="dash-ccm-sub"></div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-card-label">Practice Type</div>
+      <div class="dash-card-value" id="dash-practice">&mdash;</div>
+      <div class="dash-card-sub" id="dash-practice-sub"></div>
     </div>
     <div class="dash-card" id="dash-distance-card" style="display:none;">
       <div class="dash-card-label">Within Radius</div>
@@ -301,19 +339,25 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 <script>
 // Column definitions
 const COLUMNS = [
-  { key: 'NPI',                 label: 'NPI',           visible: true,  numeric: false },
-  { key: 'First_Name',         label: 'First Name',    visible: true,  numeric: false },
-  { key: 'Last_Name',          label: 'Last Name',     visible: true,  numeric: false },
-  { key: 'Specialty',          label: 'Specialty',     visible: true,  numeric: false },
-  { key: 'Credentials',        label: 'Credentials',   visible: false, numeric: false },
-  { key: 'Facility_Name',     label: 'Facility',      visible: true,  numeric: false },
-  { key: 'Street_1',           label: 'Street',        visible: true,  numeric: false },
-  { key: 'Street_2',           label: 'Street 2',      visible: false, numeric: false },
-  { key: 'City',               label: 'City',          visible: true,  numeric: false },
-  { key: 'State',              label: 'State',         visible: true,  numeric: false },
-  { key: 'Zip',                label: 'ZIP',           visible: true,  numeric: false },
+  { key: 'NPI',                  label: 'NPI',           visible: true,  numeric: false },
+  { key: 'First_Name',          label: 'First Name',    visible: true,  numeric: false },
+  { key: 'Last_Name',           label: 'Last Name',     visible: true,  numeric: false },
+  { key: 'Specialty',           label: 'Specialty',     visible: true,  numeric: false },
+  { key: 'Bills_CCM',           label: 'Bills CCM',     visible: true,  numeric: false },
+  { key: 'Practice_Type',       label: 'Practice Type', visible: true,  numeric: false },
+  { key: 'Entity_Type',         label: 'Entity Type',   visible: false, numeric: false },
+  { key: 'Setting',             label: 'Setting',       visible: false, numeric: false },
+  { key: 'Tot_Benes',           label: 'Beneficiaries', visible: true,  numeric: true },
+  { key: 'Tot_Srvcs',           label: 'Services',      visible: false, numeric: true },
+  { key: 'Credentials',         label: 'Credentials',   visible: false, numeric: false },
+  { key: 'Facility_Name',      label: 'Facility',      visible: true,  numeric: false },
+  { key: 'Street_1',            label: 'Street',        visible: false, numeric: false },
+  { key: 'Street_2',            label: 'Street 2',      visible: false, numeric: false },
+  { key: 'City',                label: 'City',          visible: true,  numeric: false },
+  { key: 'State',               label: 'State',         visible: true,  numeric: false },
+  { key: 'Zip',                 label: 'ZIP',           visible: true,  numeric: false },
   { key: 'Providers_At_Address', label: 'Docs @ Addr', visible: true,  numeric: true },
-  { key: '_distanceMi',        label: 'Distance (mi)', visible: false, numeric: true, dynamic: true },
+  { key: '_distanceMi',         label: 'Distance (mi)', visible: false, numeric: true, dynamic: true },
 ];
 
 // State
@@ -339,6 +383,8 @@ function parseCSV(text) {
     for (let j = 0; j < headers.length; j++) row[headers[j]] = vals[j] || '';
     if (row.Provider_Type !== 'Doctor') continue;
     row._distanceMi = null;
+    row._totBenes = parseInt(row.Tot_Benes) || 0;
+    row._totSrvcs = parseInt(row.Tot_Srvcs) || 0;
     rows.push(row);
   }
 
@@ -408,7 +454,7 @@ async function init() {
   const base = window.location.protocol === 'file:' ? './data/' : '/data/';
 
   const [csvResp, zipResp] = await Promise.all([
-    fetch(base + 'non_ccm_specialists.csv'),
+    fetch(base + 'specialists.csv'),
     fetch(base + 'zip_coords.json').catch(() => null),
   ]);
 
@@ -488,6 +534,9 @@ function applyFilters() {
   const addrMin = addrMinStr ? parseInt(addrMinStr) : null;
   const addrMax = addrMaxStr ? parseInt(addrMaxStr) : null;
   const selSpecs = [...document.querySelectorAll('#filter-specialty .spec-btn.active')].map(b => b.dataset.val);
+  const ccmFilter = document.getElementById('filter-ccm').value;
+  const practiceFilter = document.getElementById('filter-practice').value;
+  const settingFilter = document.getElementById('filter-setting').value;
 
   filteredRows = allRows.filter(r => {
     if (radius !== null && refZipCoord) {
@@ -497,6 +546,9 @@ function applyFilters() {
     if (selSpecs.length > 0 && !selSpecs.includes(r.Specialty)) return false;
     if (addrMin !== null && r._providersAtAddr < addrMin) return false;
     if (addrMax !== null && r._providersAtAddr > addrMax) return false;
+    if (ccmFilter && r.Bills_CCM !== ccmFilter) return false;
+    if (practiceFilter && r.Practice_Type !== practiceFilter) return false;
+    if (settingFilter && r.Setting !== settingFilter) return false;
     return true;
   });
 
@@ -513,6 +565,9 @@ function clearAll() {
   document.getElementById('addr-min').value = '';
   document.getElementById('addr-max').value = '';
   document.querySelectorAll('#filter-specialty .spec-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('filter-ccm').value = '';
+  document.getElementById('filter-practice').value = '';
+  document.getElementById('filter-setting').value = '';
   refZipCoord = null;
   const distCol = COLUMNS.find(c => c.key === '_distanceMi');
   distCol.visible = false;
@@ -553,6 +608,18 @@ function updateFilterTags() {
     else label += '1\u2013' + addrMax;
     addTag(container, label, () => { document.getElementById('addr-min').value = ''; document.getElementById('addr-max').value = ''; applyFilters(); });
   }
+  const ccmFilter = document.getElementById('filter-ccm').value;
+  if (ccmFilter) {
+    addTag(container, ccmFilter === 'Yes' ? 'Bills CCM' : 'Non-CCM', () => { document.getElementById('filter-ccm').value = ''; applyFilters(); });
+  }
+  const practiceFilter = document.getElementById('filter-practice').value;
+  if (practiceFilter) {
+    addTag(container, practiceFilter, () => { document.getElementById('filter-practice').value = ''; applyFilters(); });
+  }
+  const settingFilter = document.getElementById('filter-setting').value;
+  if (settingFilter) {
+    addTag(container, settingFilter, () => { document.getElementById('filter-setting').value = ''; applyFilters(); });
+  }
 }
 
 function addTag(container, text, onRemove) {
@@ -590,9 +657,13 @@ function applySortToFiltered() {
     if (numeric) {
       const va = (key === '_distanceMi') ? (a._distanceMi ?? 999999) :
                  (key === 'Providers_At_Address') ? a._providersAtAddr :
+                 (key === 'Tot_Benes') ? a._totBenes :
+                 (key === 'Tot_Srvcs') ? a._totSrvcs :
                  (parseFloat(a[key]) || 0);
       const vb = (key === '_distanceMi') ? (b._distanceMi ?? 999999) :
                  (key === 'Providers_At_Address') ? b._providersAtAddr :
+                 (key === 'Tot_Benes') ? b._totBenes :
+                 (key === 'Tot_Srvcs') ? b._totSrvcs :
                  (parseFloat(b[key]) || 0);
       return (va - vb) * dir;
     } else {
@@ -614,6 +685,18 @@ function updateDashboard() {
   document.getElementById('dash-count').textContent = count.toLocaleString();
   document.getElementById('dash-count-sub').textContent = count < total ? 'of ' + total.toLocaleString() + ' total' : 'total doctors';
   document.getElementById('dash-states').textContent = stateSet.size;
+
+  // CCM breakdown
+  let ccmYes = 0;
+  for (const r of rows) if (r.Bills_CCM === 'Yes') ccmYes++;
+  document.getElementById('dash-ccm').textContent = ccmYes.toLocaleString();
+  document.getElementById('dash-ccm-sub').textContent = 'of ' + count.toLocaleString() + ' bill CCM';
+
+  // Practice type breakdown
+  let indep = 0;
+  for (const r of rows) if (r.Practice_Type === 'Independent') indep++;
+  document.getElementById('dash-practice').textContent = indep.toLocaleString();
+  document.getElementById('dash-practice-sub').textContent = 'independent / ' + (count - indep).toLocaleString() + ' health system';
 
   const distCard = document.getElementById('dash-distance-card');
   const radius = document.getElementById('radius-select').value;
