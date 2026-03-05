@@ -199,6 +199,11 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
   </div>
 
   <div id="toolbar">
+    <button class="btn btn-primary" id="btn-apply">Apply Filters</button>
+    <button class="btn" id="btn-clear">Clear All</button>
+
+    <div class="toolbar-sep"></div>
+
     <div class="filter-group">
       <span class="toolbar-label">ZIP:</span>
       <input type="text" id="zip-input" placeholder="ZIP" maxlength="5">
@@ -273,23 +278,6 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
         <option value="Health System">Health System</option>
       </select>
     </div>
-
-    <div class="toolbar-sep"></div>
-
-    <div class="filter-group">
-      <span class="toolbar-label">Setting:</span>
-      <select class="filter-select" id="filter-setting">
-        <option value="">All</option>
-        <option value="Urban">Urban</option>
-        <option value="Suburban">Suburban</option>
-        <option value="Rural">Rural</option>
-      </select>
-    </div>
-
-    <div class="toolbar-sep"></div>
-
-    <button class="btn btn-primary" id="btn-apply">Apply Filters</button>
-    <button class="btn" id="btn-clear">Clear All</button>
 
     <div class="toolbar-gap"></div>
 
@@ -568,7 +556,6 @@ function applyFilters() {
   const selSpecs = [...document.querySelectorAll('#filter-specialty .spec-btn.active')].map(b => b.dataset.val);
   const ccmFilter = document.getElementById('filter-ccm').value;
   const practiceFilter = document.getElementById('filter-practice').value;
-  const settingFilter = document.getElementById('filter-setting').value;
 
   filteredRows = allRows.filter(r => {
     if (radius !== null && refZipCoord) {
@@ -582,7 +569,7 @@ function applyFilters() {
     if (fbenesMax !== null && r._facilityBenes > fbenesMax) return false;
     if (ccmFilter && r.Bills_CCM !== ccmFilter) return false;
     if (practiceFilter && r.Practice_Type !== practiceFilter) return false;
-    if (settingFilter && r.Setting !== settingFilter) return false;
+
     return true;
   });
 
@@ -603,7 +590,7 @@ function clearAll() {
   document.querySelectorAll('#filter-specialty .spec-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('filter-ccm').value = '';
   document.getElementById('filter-practice').value = '';
-  document.getElementById('filter-setting').value = '';
+
   refZipCoord = null;
   const distCol = COLUMNS.find(c => c.key === '_distanceMi');
   distCol.visible = false;
@@ -660,10 +647,6 @@ function updateFilterTags() {
   const practiceFilter = document.getElementById('filter-practice').value;
   if (practiceFilter) {
     addTag(container, practiceFilter, () => { document.getElementById('filter-practice').value = ''; applyFilters(); });
-  }
-  const settingFilter = document.getElementById('filter-setting').value;
-  if (settingFilter) {
-    addTag(container, settingFilter, () => { document.getElementById('filter-setting').value = ''; applyFilters(); });
   }
 }
 
