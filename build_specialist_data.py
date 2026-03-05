@@ -51,7 +51,8 @@ CCM_CODES = ["99490", "99491", "99487", "99489", "99437", "99439"]
 TIER_SMALL_GROUP = 2        # 2+ providers = Small Group
 TIER_LARGE_GROUP = 10       # 10+ providers = Large Group
 TIER_HEALTH_SYSTEM = 50     # 50+ providers = Health System
-MULTI_ADDRESS_THRESHOLD = 5 # 5+ addresses = upgrade one tier
+MULTI_ADDRESS_THRESHOLD = 5  # 5+ addresses = upgrade one tier
+FACILITY_BENES_THRESHOLD = 2000  # 2000+ total facility benes = upgrade one tier
 
 # NP/PA credential patterns
 NP_PA_PATTERNS = [
@@ -408,9 +409,9 @@ def main():
     # ══════════════════════════════════════════════════════════════════════
     # STEP 5: Classify Practice_Type (Health System vs Independent)
     # ══════════════════════════════════════════════════════════════════════
-    print(f"\n[Step 5/6] Classifying practice type (multi-tier with address correction)...")
+    print(f"\n[Step 5/6] Classifying practice type (multi-factor)...")
 
-    # Count ALL providers per facility name
+    # Count providers per facility name
     facility_counts = {}
     for row in rows:
         fn = row["Facility_Name"].strip()
@@ -429,8 +430,28 @@ def main():
 
     facility_addr_counts = {fn: len(addrs) for fn, addrs in facility_addresses.items()}
 
-    def classify_practice(provider_count, address_count):
-        """Multi-tier classification with multi-address upgrade."""
+    # Sum total beneficiaries per facility name
+    facility_benes = {}
+    for row in rows:
+        fn = row["Facility_Name"].strip()
+        if fn:
+            benes = int(row["Tot_Benes"]) if row["Tot_Benes"] else 0
+            facility_benes[fn] = facility_benes.get(fn, 0) + benes
+
+    # Write Facility_Benes onto each row
+    for row in rows:
+        fn = row["Facility_Name"].strip()
+        row["Facility_Benes"] = facility_benes.get(fn, 0) if fn else 0
+
+    upgrade_map = {
+        "Solo Practice": "Small Group",
+        "Small Group": "Large Group",
+        "Large Group": "Health System",
+        "Health System": "Health System",
+    }
+
+    def classify_practice(provider_count, address_count, total_benes):
+        """Multi-tier classification with address and volume upgrades."""
         if provider_count >= TIER_HEALTH_SYSTEM:
             base = "Health System"
         elif provider_count >= TIER_LARGE_GROUP:
@@ -442,13 +463,11 @@ def main():
 
         # 5+ distinct addresses → upgrade one tier
         if address_count >= MULTI_ADDRESS_THRESHOLD:
-            upgrade = {
-                "Solo Practice": "Small Group",
-                "Small Group": "Large Group",
-                "Large Group": "Health System",
-                "Health System": "Health System",
-            }
-            return upgrade[base]
+            base = upgrade_map[base]
+
+        # High aggregate patient volume → upgrade one tier
+        if total_benes >= FACILITY_BENES_THRESHOLD:
+            base = upgrade_map[base]
 
         return base
 
@@ -459,7 +478,8 @@ def main():
         if fn:
             pcount = facility_counts.get(fn, 1)
             acount = facility_addr_counts.get(fn, 1)
-            practice_type = classify_practice(pcount, acount)
+            fbenes = facility_benes.get(fn, 0)
+            practice_type = classify_practice(pcount, acount, fbenes)
         else:
             practice_type = "Solo Practice"
         row["Practice_Type"] = practice_type
@@ -470,6 +490,13 @@ def main():
         pct = 100 * count / len(rows)
         print(f"  {tier}: {count:,} ({pct:.1f}%)")
 
+    # Facility volume stats
+    all_fbenes = sorted(facility_benes.values())
+    if all_fbenes:
+        p50 = all_fbenes[len(all_fbenes) // 2]
+        p75 = all_fbenes[int(len(all_fbenes) * 0.75)]
+        print(f"  Facility benes: median={p50:,}, P75={p75:,}, max={all_fbenes[-1]:,}")
+
     # ══════════════════════════════════════════════════════════════════════
     # STEP 6: Write output files
     # ══════════════════════════════════════════════════════════════════════
@@ -478,7 +505,7 @@ def main():
     fieldnames = [
         "NPI", "First_Name", "Last_Name", "Credentials", "Provider_Type",
         "Specialty", "Bills_CCM", "Practice_Type", "Entity_Type", "Setting",
-        "Tot_Benes", "Tot_Srvcs",
+        "Tot_Benes", "Tot_Srvcs", "Facility_Benes",
         "Facility_Name", "Street_1", "Street_2", "City", "State", "Zip",
         "Providers_At_Address",
     ]

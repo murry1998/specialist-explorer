@@ -365,6 +365,7 @@ const COLUMNS = [
   { key: 'Setting',             label: 'Setting',       visible: false, numeric: false },
   { key: 'Tot_Benes',           label: 'Beneficiaries', visible: true,  numeric: true },
   { key: 'Tot_Srvcs',           label: 'Services',      visible: false, numeric: true },
+  { key: 'Facility_Benes',     label: 'Facility Benes', visible: true,  numeric: true },
   { key: 'Credentials',         label: 'Credentials',   visible: false, numeric: false },
   { key: 'Facility_Name',      label: 'Facility',      visible: true,  numeric: false },
   { key: 'Street_1',            label: 'Street',        visible: false, numeric: false },
@@ -401,6 +402,7 @@ function parseCSV(text) {
     row._distanceMi = null;
     row._totBenes = parseInt(row.Tot_Benes) || 0;
     row._totSrvcs = parseInt(row.Tot_Srvcs) || 0;
+    row._facilityBenes = parseInt(row.Facility_Benes) || 0;
     rows.push(row);
   }
 
@@ -709,11 +711,13 @@ function applySortToFiltered() {
                  (key === 'Providers_At_Address') ? a._providersAtAddr :
                  (key === 'Tot_Benes') ? a._totBenes :
                  (key === 'Tot_Srvcs') ? a._totSrvcs :
+                 (key === 'Facility_Benes') ? a._facilityBenes :
                  (parseFloat(a[key]) || 0);
       const vb = (key === '_distanceMi') ? (b._distanceMi ?? 999999) :
                  (key === 'Providers_At_Address') ? b._providersAtAddr :
                  (key === 'Tot_Benes') ? b._totBenes :
                  (key === 'Tot_Srvcs') ? b._totSrvcs :
+                 (key === 'Facility_Benes') ? b._facilityBenes :
                  (parseFloat(b[key]) || 0);
       return (va - vb) * dir;
     } else {
