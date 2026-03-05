@@ -96,6 +96,7 @@ select.filter-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px 
 
 .toolbar-gap { flex: 1; }
 .toolbar-sep { width: 1px; height: 26px; background: var(--border); margin: 0 2px; }
+.filter-group { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 
 /* Filter Tags */
 #active-filters {
@@ -198,76 +199,92 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
   </div>
 
   <div id="toolbar">
-    <span class="toolbar-label">ZIP:</span>
-    <input type="text" id="zip-input" placeholder="ZIP" maxlength="5">
-    <select class="filter-select" id="radius-select">
-      <option value="">Any Distance</option>
-      <option value="10">Within 10 mi</option>
-      <option value="25">Within 25 mi</option>
-      <option value="50">Within 50 mi</option>
-      <option value="100">Within 100 mi</option>
-      <option value="250">Within 250 mi</option>
-      <option value="500">Within 500 mi</option>
-    </select>
-
-    <div class="toolbar-sep"></div>
-
-    <span class="toolbar-label">State:</span>
-    <select class="filter-select" id="filter-state"><option value="">All States</option></select>
-
-    <div class="toolbar-sep"></div>
-
-    <span class="toolbar-label">Specialty:</span>
-    <div class="spec-group" id="filter-specialty">
-      <button class="spec-btn" data-val="Neurology">Neuro</button>
-      <button class="spec-btn" data-val="Nephrology">Neph</button>
-      <button class="spec-btn" data-val="Rheumatology">Rheum</button>
-      <button class="spec-btn" data-val="Urology">Uro</button>
+    <div class="filter-group">
+      <span class="toolbar-label">ZIP:</span>
+      <input type="text" id="zip-input" placeholder="ZIP" maxlength="5">
+      <select class="filter-select" id="radius-select">
+        <option value="">Any Distance</option>
+        <option value="10">Within 10 mi</option>
+        <option value="25">Within 25 mi</option>
+        <option value="50">Within 50 mi</option>
+        <option value="100">Within 100 mi</option>
+        <option value="250">Within 250 mi</option>
+        <option value="500">Within 500 mi</option>
+      </select>
     </div>
 
     <div class="toolbar-sep"></div>
 
-    <span class="toolbar-label">Docs @ Addr:</span>
-    <input type="text" id="addr-min" class="range-input" placeholder="Min" maxlength="4">
-    <span class="toolbar-label">&ndash;</span>
-    <input type="text" id="addr-max" class="range-input" placeholder="Max" maxlength="4">
+    <div class="filter-group">
+      <span class="toolbar-label">State:</span>
+      <select class="filter-select" id="filter-state"><option value="">All States</option></select>
+    </div>
 
     <div class="toolbar-sep"></div>
 
-    <span class="toolbar-label">Facility Benes:</span>
-    <input type="text" id="fbenes-min" class="range-input" placeholder="Min" maxlength="8">
-    <span class="toolbar-label">&ndash;</span>
-    <input type="text" id="fbenes-max" class="range-input" placeholder="Max" maxlength="8">
+    <div class="filter-group">
+      <span class="toolbar-label">Specialty:</span>
+      <div class="spec-group" id="filter-specialty">
+        <button class="spec-btn" data-val="Neurology">Neuro</button>
+        <button class="spec-btn" data-val="Nephrology">Neph</button>
+        <button class="spec-btn" data-val="Rheumatology">Rheum</button>
+        <button class="spec-btn" data-val="Urology">Uro</button>
+      </div>
+    </div>
 
     <div class="toolbar-sep"></div>
 
-    <span class="toolbar-label">CCM:</span>
-    <select class="filter-select" id="filter-ccm">
-      <option value="">All</option>
-      <option value="Yes">Bills CCM</option>
-      <option value="No">Non-CCM</option>
-    </select>
+    <div class="filter-group">
+      <span class="toolbar-label">Docs @ Addr:</span>
+      <input type="text" id="addr-min" class="range-input" placeholder="Min" maxlength="4">
+      <span class="toolbar-label">&ndash;</span>
+      <input type="text" id="addr-max" class="range-input" placeholder="Max" maxlength="4">
+    </div>
 
     <div class="toolbar-sep"></div>
 
-    <span class="toolbar-label">Practice:</span>
-    <select class="filter-select" id="filter-practice">
-      <option value="">All</option>
-      <option value="Solo Practice">Solo Practice</option>
-      <option value="Small Group">Small Group</option>
-      <option value="Large Group">Large Group</option>
-      <option value="Health System">Health System</option>
-    </select>
+    <div class="filter-group">
+      <span class="toolbar-label">Facility Benes:</span>
+      <input type="text" id="fbenes-min" class="range-input" placeholder="Min" maxlength="8">
+      <span class="toolbar-label">&ndash;</span>
+      <input type="text" id="fbenes-max" class="range-input" placeholder="Max" maxlength="8">
+    </div>
 
     <div class="toolbar-sep"></div>
 
-    <span class="toolbar-label">Setting:</span>
-    <select class="filter-select" id="filter-setting">
-      <option value="">All</option>
-      <option value="Urban">Urban</option>
-      <option value="Suburban">Suburban</option>
-      <option value="Rural">Rural</option>
-    </select>
+    <div class="filter-group">
+      <span class="toolbar-label">CCM:</span>
+      <select class="filter-select" id="filter-ccm">
+        <option value="">All</option>
+        <option value="Yes">Bills CCM</option>
+        <option value="No">Non-CCM</option>
+      </select>
+    </div>
+
+    <div class="toolbar-sep"></div>
+
+    <div class="filter-group">
+      <span class="toolbar-label">Practice:</span>
+      <select class="filter-select" id="filter-practice">
+        <option value="">All</option>
+        <option value="Solo Practice">Solo Practice</option>
+        <option value="Small Group">Small Group</option>
+        <option value="Large Group">Large Group</option>
+        <option value="Health System">Health System</option>
+      </select>
+    </div>
+
+    <div class="toolbar-sep"></div>
+
+    <div class="filter-group">
+      <span class="toolbar-label">Setting:</span>
+      <select class="filter-select" id="filter-setting">
+        <option value="">All</option>
+        <option value="Urban">Urban</option>
+        <option value="Suburban">Suburban</option>
+        <option value="Rural">Rural</option>
+      </select>
+    </div>
 
     <div class="toolbar-sep"></div>
 
