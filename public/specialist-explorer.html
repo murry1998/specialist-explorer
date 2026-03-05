@@ -355,13 +355,12 @@ td.cb-col input[type="checkbox"], th.cb-col input[type="checkbox"] {
 
     <div class="filter-group">
       <span class="toolbar-label">Practice:</span>
-      <select class="filter-select" id="filter-practice">
-        <option value="">All</option>
-        <option value="Solo Practice">Solo Practice</option>
-        <option value="Small Group">Small Group</option>
-        <option value="Large Group">Large Group</option>
-        <option value="Health System">Health System</option>
-      </select>
+      <div class="spec-group" id="filter-practice">
+        <button class="spec-btn" data-val="Solo Practice">Solo</button>
+        <button class="spec-btn" data-val="Small Group">Small</button>
+        <button class="spec-btn" data-val="Large Group">Large</button>
+        <button class="spec-btn" data-val="Health System">System</button>
+      </div>
     </div>
 
     <div class="toolbar-gap"></div>
@@ -1114,6 +1113,11 @@ async function init() {
     btn.addEventListener('click', () => { btn.classList.toggle('active'); });
   });
 
+  // Practice type toggle buttons (click toggles active, no auto-apply)
+  document.querySelectorAll('#filter-practice .spec-btn').forEach(btn => {
+    btn.addEventListener('click', () => { btn.classList.toggle('active'); });
+  });
+
   document.getElementById('btn-clear').addEventListener('click', clearAll);
   document.getElementById('btn-export').addEventListener('click', exportCSV);
   document.getElementById('page-size').addEventListener('change', () => { currentPage = 0; renderTable(); });
@@ -1204,7 +1208,7 @@ function applyFilters() {
   const fbenesMax = fbenesMaxStr ? parseInt(fbenesMaxStr) : null;
   const selSpecs = [...document.querySelectorAll('#filter-specialty .spec-btn.active')].map(b => b.dataset.val);
   const ccmFilter = document.getElementById('filter-ccm').value;
-  const practiceFilter = document.getElementById('filter-practice').value;
+  const selPractice = [...document.querySelectorAll('#filter-practice .spec-btn.active')].map(b => b.dataset.val);
 
   filteredRows = allRows.filter(r => {
     if (radius !== null && refZipCoord) {
@@ -1217,7 +1221,7 @@ function applyFilters() {
     if (fbenesMin !== null && r._facilityBenes < fbenesMin) return false;
     if (fbenesMax !== null && r._facilityBenes > fbenesMax) return false;
     if (ccmFilter && r.Bills_CCM !== ccmFilter) return false;
-    if (practiceFilter && r.Practice_Type !== practiceFilter) return false;
+    if (selPractice.length > 0 && !selPractice.includes(r.Practice_Type)) return false;
 
     return true;
   });
@@ -1238,7 +1242,7 @@ function clearAll() {
   document.getElementById('fbenes-max').value = '';
   document.querySelectorAll('#filter-specialty .spec-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('filter-ccm').value = '';
-  document.getElementById('filter-practice').value = '';
+  document.querySelectorAll('#filter-practice .spec-btn').forEach(b => b.classList.remove('active'));
 
   refZipCoord = null;
   const distCol = COLUMNS.find(c => c.key === '_distanceMi');
@@ -1294,9 +1298,10 @@ function updateFilterTags() {
   if (ccmFilter) {
     addTag(container, ccmFilter === 'Yes' ? 'Bills CCM' : 'Non-CCM', () => { document.getElementById('filter-ccm').value = ''; applyFilters(); });
   }
-  const practiceFilter = document.getElementById('filter-practice').value;
-  if (practiceFilter) {
-    addTag(container, practiceFilter, () => { document.getElementById('filter-practice').value = ''; applyFilters(); });
+  const activePractice = [...document.querySelectorAll('#filter-practice .spec-btn.active')];
+  for (const btn of activePractice) {
+    const prac = btn.dataset.val;
+    addTag(container, prac, () => { btn.classList.remove('active'); applyFilters(); });
   }
 }
 
