@@ -73,6 +73,8 @@ select.filter-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px 
 .btn:hover { background: var(--bg-hover); border-color: #adb5bd; }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 500; }
 .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-danger { background: var(--red); border-color: var(--red); color: #fff; font-weight: 500; }
+.btn-danger:hover { background: #c92a2a; border-color: #c92a2a; }
 
 .range-input {
   width: 60px; padding: 7px 8px; background: var(--bg); border: 1px solid var(--border);
@@ -111,6 +113,27 @@ select.filter-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px 
 .filter-tag-x { cursor: pointer; font-size: 14px; line-height: 1; opacity: 0.6; }
 .filter-tag-x:hover { opacity: 1; }
 
+/* Selection Bar */
+#selection-bar {
+  display: none; align-items: center; gap: 12px;
+  padding: 10px 24px; background: var(--accent-subtle);
+  border-bottom: 1px solid rgba(66,99,235,0.2);
+  font-size: 13px; font-weight: 500; color: var(--accent); flex-shrink: 0;
+}
+#selection-bar.visible { display: flex; }
+#selection-bar .sel-count { font-weight: 600; }
+#selection-bar .sel-actions { display: flex; gap: 8px; margin-left: auto; }
+
+/* List View Bar */
+#list-view-bar {
+  display: none; align-items: center; gap: 12px;
+  padding: 12px 24px; background: var(--bg-alt);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+#list-view-bar.visible { display: flex; }
+.list-view-name { font-size: 16px; font-weight: 700; color: var(--text); }
+.list-view-count { font-size: 12px; color: var(--text-muted); }
+
 /* Dashboard */
 #dashboard {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -137,6 +160,8 @@ th:hover { color: var(--text); }
 th.sort-asc::after { content: ' \u25B2'; color: var(--accent); }
 th.sort-desc::after { content: ' \u25BC'; color: var(--accent); }
 th.hidden-col { display: none; }
+th.cb-col { width: 36px; min-width: 36px; max-width: 36px; text-align: center; cursor: default; padding: 10px 8px; }
+th.cb-col:hover { color: var(--text-dim); }
 
 td {
   padding: 9px 14px; border-bottom: 1px solid var(--border-light);
@@ -145,6 +170,10 @@ td {
 td.hidden-col { display: none; }
 tr:hover td { background: var(--bg-hover); }
 td.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.cb-col { width: 36px; min-width: 36px; max-width: 36px; text-align: center; padding: 9px 8px; }
+td.cb-col input[type="checkbox"], th.cb-col input[type="checkbox"] {
+  accent-color: var(--accent); cursor: pointer; width: 15px; height: 15px;
+}
 
 /* Footer */
 #footer {
@@ -175,6 +204,62 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .col-check { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; cursor: pointer; }
 .col-check input { accent-color: var(--accent); cursor: pointer; }
 .col-check:hover { color: var(--text); }
+
+/* Modal Overlay (shared by Add-to-List and List Library) */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.2);
+  z-index: 100; align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-panel {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+  padding: 24px; width: 480px; max-height: 80vh; overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+}
+.modal-panel h3 { font-size: 15px; color: var(--text); margin-bottom: 16px; font-weight: 600; }
+
+/* Add-to-List Modal */
+.list-radio-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 6px; cursor: pointer; transition: background 0.12s;
+}
+.list-radio-row:hover { background: var(--bg-hover); }
+.list-radio-row input[type="radio"] { accent-color: var(--accent); cursor: pointer; }
+.list-radio-row-label { font-size: 13px; color: var(--text); }
+.list-radio-row-meta { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+.new-list-input {
+  flex: 1; padding: 7px 10px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text); font-family: inherit; font-size: 13px; outline: none;
+}
+.new-list-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-subtle); }
+
+/* List Library Items */
+.list-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border: 1px solid var(--border-light); border-radius: 8px;
+  margin-bottom: 8px; transition: border-color 0.12s;
+}
+.list-item:hover { border-color: var(--accent); }
+.list-item-info { flex: 1; min-width: 0; }
+.list-item-name { font-weight: 600; font-size: 14px; color: var(--text); }
+.list-item-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.list-item-actions { display: flex; gap: 6px; }
+.list-item-actions .btn { padding: 5px 10px; font-size: 11px; }
+.list-rename-input {
+  font-weight: 600; font-size: 14px; color: var(--text); border: 1px solid var(--accent);
+  border-radius: 4px; padding: 2px 6px; outline: none; font-family: inherit;
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 13px; }
+
+/* Toast */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--text); color: #fff; padding: 10px 20px; border-radius: 8px;
+  font-size: 13px; font-weight: 500; opacity: 0; transition: opacity 0.2s, transform 0.2s;
+  z-index: 200; pointer-events: none;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* Loading */
 #loading { display: flex; align-items: center; justify-content: center; height: 100%; font-size: 14px; color: var(--text-dim); gap: 12px; }
@@ -285,10 +370,32 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
     <div class="toolbar-sep"></div>
 
+    <button class="btn" id="btn-lists">Lists</button>
+
+    <div class="toolbar-sep"></div>
+
     <button class="btn btn-primary" id="btn-export">Export CSV</button>
   </div>
 
   <div id="active-filters"></div>
+
+  <div id="selection-bar">
+    <span class="sel-count"><span id="sel-count-num">0</span> <span id="sel-count-label">doctors</span> selected</span>
+    <div class="sel-actions">
+      <button class="btn btn-primary" id="btn-add-to-list">Add to List</button>
+      <button class="btn" id="btn-clear-selection">Clear Selection</button>
+    </div>
+  </div>
+
+  <div id="list-view-bar">
+    <button class="btn" id="btn-back-explorer">&larr; Back</button>
+    <span class="list-view-name" id="list-view-name"></span>
+    <span class="list-view-count" id="list-view-count"></span>
+    <div class="toolbar-gap"></div>
+    <button class="btn" id="btn-remove-from-list">Remove Selected</button>
+    <div class="toolbar-sep"></div>
+    <button class="btn btn-primary" id="btn-export-list">Export List CSV</button>
+  </div>
 
   <div id="dashboard">
     <div class="dash-card">
@@ -339,6 +446,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
   </div>
 </div>
 
+<!-- Column Picker Modal -->
 <div id="col-picker-overlay">
   <div id="col-picker">
     <h3>Visible Columns</h3>
@@ -349,6 +457,32 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
     </div>
   </div>
 </div>
+
+<!-- Add to List Modal -->
+<div id="add-list-overlay" class="modal-overlay">
+  <div class="modal-panel">
+    <h3 id="add-list-title">Add doctors to list</h3>
+    <div id="add-list-options"></div>
+    <div style="margin-top:16px;display:flex;gap:8px;">
+      <button class="btn btn-primary" id="add-list-confirm">Add</button>
+      <button class="btn" id="add-list-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- List Library Modal -->
+<div id="list-library-overlay" class="modal-overlay">
+  <div class="modal-panel" style="width:540px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h3 style="margin:0;">Saved Lists</h3>
+      <button class="btn" id="lib-close">&times;</button>
+    </div>
+    <div id="list-library-items"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
 
 <script>
 // Column definitions
@@ -383,6 +517,13 @@ let sortCol = null;
 let sortDir = 'asc';
 let zipCoords = {};
 let refZipCoord = null;
+
+// Selection state
+let selectedNPIs = new Set();
+
+// List state
+let savedLists = {};
+let activeListView = null;  // null = explorer mode, or list ID
 
 // CSV parser
 function parseCSV(text) {
@@ -465,7 +606,474 @@ function computeDistances() {
   buildColPicker();
 }
 
-// Init
+// ========== SELECTION ==========
+
+function toggleSelectRow(npi) {
+  if (selectedNPIs.has(npi)) selectedNPIs.delete(npi);
+  else selectedNPIs.add(npi);
+  updateSelectionBar();
+  const selectAllCb = document.getElementById('select-all-cb');
+  if (selectAllCb) selectAllCb.checked = isAllPageSelected();
+}
+
+function toggleSelectAll() {
+  const pageSize = parseInt(document.getElementById('page-size').value);
+  const start = currentPage * pageSize;
+  const end = Math.min(start + pageSize, filteredRows.length);
+  const pageRows = filteredRows.slice(start, end);
+  const allChecked = isAllPageSelected();
+
+  for (const row of pageRows) {
+    if (allChecked) selectedNPIs.delete(row.NPI);
+    else selectedNPIs.add(row.NPI);
+  }
+
+  // Update checkboxes in DOM
+  const checkboxes = document.querySelectorAll('#table-body tr .cb-col input[type="checkbox"]');
+  checkboxes.forEach((cb, i) => {
+    if (i < pageRows.length) cb.checked = selectedNPIs.has(pageRows[i].NPI);
+  });
+
+  updateSelectionBar();
+}
+
+function isAllPageSelected() {
+  const pageSize = parseInt(document.getElementById('page-size').value);
+  const start = currentPage * pageSize;
+  const end = Math.min(start + pageSize, filteredRows.length);
+  const pageRows = filteredRows.slice(start, end);
+  if (pageRows.length === 0) return false;
+  return pageRows.every(r => selectedNPIs.has(r.NPI));
+}
+
+function updateSelectionBar() {
+  const bar = document.getElementById('selection-bar');
+  const count = selectedNPIs.size;
+  if (count > 0) {
+    bar.classList.add('visible');
+    document.getElementById('sel-count-num').textContent = count;
+    document.getElementById('sel-count-label').textContent = count === 1 ? 'doctor' : 'doctors';
+  } else {
+    bar.classList.remove('visible');
+  }
+}
+
+function clearSelection() {
+  selectedNPIs.clear();
+  updateSelectionBar();
+  // Uncheck all visible checkboxes
+  document.querySelectorAll('#table-body .cb-col input[type="checkbox"]').forEach(cb => cb.checked = false);
+  const selectAllCb = document.getElementById('select-all-cb');
+  if (selectAllCb) selectAllCb.checked = false;
+}
+
+// ========== LIST PERSISTENCE ==========
+
+function loadListsFromStorage() {
+  try {
+    const data = localStorage.getItem('specialist_lists');
+    if (data) {
+      const parsed = JSON.parse(data);
+      savedLists = parsed.lists || {};
+    }
+  } catch (e) {
+    console.warn('Failed to load lists from localStorage', e);
+    savedLists = {};
+  }
+}
+
+function saveListsToStorage() {
+  try {
+    localStorage.setItem('specialist_lists', JSON.stringify({ lists: savedLists }));
+  } catch (e) {
+    console.warn('Failed to save lists to localStorage', e);
+    showToast('Storage full! Cannot save list.');
+  }
+}
+
+function generateListId() {
+  return 'list_' + Date.now();
+}
+
+// ========== LIST CRUD ==========
+
+function createList(name) {
+  const id = generateListId();
+  savedLists[id] = {
+    id: id,
+    name: name,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    items: []
+  };
+  saveListsToStorage();
+  return id;
+}
+
+function renameList(listId, newName) {
+  if (!savedLists[listId]) return;
+  savedLists[listId].name = newName;
+  savedLists[listId].updatedAt = Date.now();
+  saveListsToStorage();
+}
+
+function deleteList(listId) {
+  if (!savedLists[listId]) return;
+  // If currently viewing this list, go back to explorer
+  if (activeListView === listId) closeListView();
+  delete savedLists[listId];
+  saveListsToStorage();
+}
+
+function addToList(listId, npis) {
+  const list = savedLists[listId];
+  if (!list) return { added: 0, dupes: 0 };
+  const existingNPIs = new Set(list.items.map(item => item.NPI));
+  let added = 0, dupes = 0;
+
+  for (const npi of npis) {
+    if (existingNPIs.has(npi)) { dupes++; continue; }
+    // Find full row data from allRows
+    const row = allRows.find(r => r.NPI === npi);
+    if (!row) continue;
+    // Snapshot all data columns
+    const snapshot = {};
+    for (const col of COLUMNS) {
+      if (col.key === '_distanceMi') continue;
+      snapshot[col.key] = row[col.key] || '';
+    }
+    list.items.push(snapshot);
+    existingNPIs.add(npi);
+    added++;
+  }
+
+  list.updatedAt = Date.now();
+  saveListsToStorage();
+  return { added, dupes };
+}
+
+function removeFromList(listId, npis) {
+  const list = savedLists[listId];
+  if (!list) return;
+  const removeSet = new Set(npis);
+  list.items = list.items.filter(item => !removeSet.has(item.NPI));
+  list.updatedAt = Date.now();
+  saveListsToStorage();
+}
+
+// ========== ADD TO LIST MODAL ==========
+
+function showAddToListModal() {
+  const count = selectedNPIs.size;
+  if (count === 0) return;
+
+  document.getElementById('add-list-title').textContent = 'Add ' + count + ' doctor' + (count !== 1 ? 's' : '') + ' to list';
+
+  const container = document.getElementById('add-list-options');
+  container.innerHTML = '';
+
+  // "Create New List" option
+  const newRow = document.createElement('label');
+  newRow.className = 'list-radio-row';
+  newRow.innerHTML = '<input type="radio" name="add-list-choice" value="__new__" checked> ' +
+    '<input type="text" class="new-list-input" id="new-list-name" placeholder="New list name...">';
+  container.appendChild(newRow);
+
+  // Click the radio when clicking the text input
+  const newInput = newRow.querySelector('.new-list-input');
+  newInput.addEventListener('focus', () => {
+    newRow.querySelector('input[type="radio"]').checked = true;
+  });
+  newInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); handleAddToList(); }
+  });
+
+  // Existing lists
+  const listIds = Object.keys(savedLists).sort((a, b) => (savedLists[b].updatedAt || 0) - (savedLists[a].updatedAt || 0));
+  for (const id of listIds) {
+    const list = savedLists[id];
+    const row = document.createElement('label');
+    row.className = 'list-radio-row';
+    row.innerHTML = '<input type="radio" name="add-list-choice" value="' + id + '"> ' +
+      '<span class="list-radio-row-label">' + escapeHtml(list.name) + '</span>' +
+      '<span class="list-radio-row-meta">' + list.items.length + ' doctor' + (list.items.length !== 1 ? 's' : '') + '</span>';
+    container.appendChild(row);
+  }
+
+  document.getElementById('add-list-overlay').classList.add('open');
+  // Focus the new list input
+  setTimeout(() => newInput.focus(), 50);
+}
+
+function hideAddToListModal() {
+  document.getElementById('add-list-overlay').classList.remove('open');
+}
+
+function handleAddToList() {
+  const selected = document.querySelector('input[name="add-list-choice"]:checked');
+  if (!selected) return;
+
+  let listId;
+  if (selected.value === '__new__') {
+    const name = document.getElementById('new-list-name').value.trim();
+    if (!name) {
+      document.getElementById('new-list-name').focus();
+      return;
+    }
+    listId = createList(name);
+  } else {
+    listId = selected.value;
+  }
+
+  const result = addToList(listId, selectedNPIs);
+  const listName = savedLists[listId].name;
+
+  hideAddToListModal();
+  clearSelection();
+
+  let msg = 'Added ' + result.added + ' doctor' + (result.added !== 1 ? 's' : '') + ' to "' + listName + '"';
+  if (result.dupes > 0) msg += ' (' + result.dupes + ' already in list)';
+  showToast(msg);
+}
+
+// ========== LIST LIBRARY MODAL ==========
+
+function showListLibrary() {
+  renderListLibraryItems();
+  document.getElementById('list-library-overlay').classList.add('open');
+}
+
+function hideListLibrary() {
+  document.getElementById('list-library-overlay').classList.remove('open');
+}
+
+function renderListLibraryItems() {
+  const container = document.getElementById('list-library-items');
+  container.innerHTML = '';
+
+  const listIds = Object.keys(savedLists).sort((a, b) => (savedLists[b].updatedAt || 0) - (savedLists[a].updatedAt || 0));
+
+  if (listIds.length === 0) {
+    container.innerHTML = '<div class="empty-state">No saved lists yet.<br>Select doctors and click "Add to List" to create one.</div>';
+    return;
+  }
+
+  for (const id of listIds) {
+    const list = savedLists[id];
+    const item = document.createElement('div');
+    item.className = 'list-item';
+    item.dataset.listId = id;
+
+    const created = new Date(list.createdAt);
+    const dateStr = created.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    item.innerHTML =
+      '<div class="list-item-info">' +
+        '<div class="list-item-name">' + escapeHtml(list.name) + '</div>' +
+        '<div class="list-item-meta">' + list.items.length + ' doctor' + (list.items.length !== 1 ? 's' : '') + ' &middot; Created ' + dateStr + '</div>' +
+      '</div>' +
+      '<div class="list-item-actions">' +
+        '<button class="btn list-open-btn">Open</button>' +
+        '<button class="btn list-export-btn">Export</button>' +
+        '<button class="btn list-rename-btn">Rename</button>' +
+        '<button class="btn btn-danger list-delete-btn">Delete</button>' +
+      '</div>';
+
+    // Open
+    item.querySelector('.list-open-btn').addEventListener('click', () => {
+      hideListLibrary();
+      openListView(id);
+    });
+
+    // Export
+    item.querySelector('.list-export-btn').addEventListener('click', () => {
+      exportListCSV(id);
+    });
+
+    // Rename
+    item.querySelector('.list-rename-btn').addEventListener('click', () => {
+      const nameEl = item.querySelector('.list-item-name');
+      const currentName = list.name;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'list-rename-input';
+      input.value = currentName;
+      nameEl.replaceWith(input);
+      input.focus();
+      input.select();
+
+      const finishRename = () => {
+        const newName = input.value.trim() || currentName;
+        renameList(id, newName);
+        renderListLibraryItems();
+      };
+      input.addEventListener('blur', finishRename);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+        if (e.key === 'Escape') { input.value = currentName; input.blur(); }
+      });
+    });
+
+    // Delete
+    item.querySelector('.list-delete-btn').addEventListener('click', (e) => {
+      const btn = e.target;
+      if (btn.dataset.confirm === 'yes') {
+        deleteList(id);
+        renderListLibraryItems();
+        showToast('Deleted "' + list.name + '"');
+      } else {
+        btn.textContent = 'Confirm?';
+        btn.dataset.confirm = 'yes';
+        setTimeout(() => {
+          if (btn.parentElement) {
+            btn.textContent = 'Delete';
+            delete btn.dataset.confirm;
+          }
+        }, 3000);
+      }
+    });
+
+    container.appendChild(item);
+  }
+}
+
+// ========== LIST DETAIL VIEW ==========
+
+function openListView(listId) {
+  activeListView = listId;
+  const list = savedLists[listId];
+  if (!list) return;
+
+  // Hide explorer UI
+  document.getElementById('toolbar').style.display = 'none';
+  document.getElementById('active-filters').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('selection-bar').classList.remove('visible');
+
+  // Show list view bar
+  document.getElementById('list-view-name').textContent = list.name;
+  document.getElementById('list-view-count').textContent = list.items.length + ' doctor' + (list.items.length !== 1 ? 's' : '');
+  document.getElementById('list-view-bar').classList.add('visible');
+
+  // Use list items as the data source
+  filteredRows = list.items.map(item => ({
+    ...item,
+    _distanceMi: null,
+    _totBenes: parseInt(item.Tot_Benes) || 0,
+    _totSrvcs: parseInt(item.Tot_Srvcs) || 0,
+    _facilityBenes: parseInt(item.Facility_Benes) || 0,
+    _providersAtAddr: parseInt(item.Providers_At_Address) || 0,
+  }));
+
+  selectedNPIs.clear();
+  currentPage = 0;
+  sortCol = null;
+  sortDir = 'asc';
+  buildTableHead();
+  renderTable();
+}
+
+function closeListView() {
+  activeListView = null;
+
+  // Show explorer UI
+  document.getElementById('toolbar').style.display = '';
+  document.getElementById('active-filters').style.display = '';
+  document.getElementById('dashboard').style.display = '';
+
+  // Hide list view bar
+  document.getElementById('list-view-bar').classList.remove('visible');
+
+  // Restore explorer data
+  selectedNPIs.clear();
+  currentPage = 0;
+  sortCol = null;
+  sortDir = 'asc';
+  buildTableHead();
+  applyFilters();
+}
+
+function removeSelectedFromList() {
+  if (!activeListView || selectedNPIs.size === 0) return;
+  const count = selectedNPIs.size;
+  removeFromList(activeListView, selectedNPIs);
+  selectedNPIs.clear();
+
+  // Refresh the list view
+  const list = savedLists[activeListView];
+  if (!list) { closeListView(); return; }
+
+  document.getElementById('list-view-count').textContent = list.items.length + ' doctor' + (list.items.length !== 1 ? 's' : '');
+  filteredRows = list.items.map(item => ({
+    ...item,
+    _distanceMi: null,
+    _totBenes: parseInt(item.Tot_Benes) || 0,
+    _totSrvcs: parseInt(item.Tot_Srvcs) || 0,
+    _facilityBenes: parseInt(item.Facility_Benes) || 0,
+    _providersAtAddr: parseInt(item.Providers_At_Address) || 0,
+  }));
+
+  currentPage = 0;
+  renderTable();
+  showToast('Removed ' + count + ' doctor' + (count !== 1 ? 's' : '') + ' from list');
+}
+
+// ========== LIST EXPORT ==========
+
+function exportListCSV(listId) {
+  const list = savedLists[listId];
+  if (!list || list.items.length === 0) {
+    showToast('List is empty');
+    return;
+  }
+
+  const visibleCols = COLUMNS.filter(c => c.visible && c.key !== '_distanceMi');
+  const header = visibleCols.map(c => c.key).join(',');
+  const lines = [header];
+
+  for (const item of list.items) {
+    const vals = visibleCols.map(c => {
+      let v = item[c.key] || '';
+      if (String(v).includes(',') || String(v).includes('"') || String(v).includes('\n')) {
+        v = '"' + String(v).replace(/"/g, '""') + '"';
+      }
+      return v;
+    });
+    lines.push(vals.join(','));
+  }
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = list.name.replace(/[^a-zA-Z0-9_\- ]/g, '_').replace(/\s+/g, '_') + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Exported "' + list.name + '"');
+}
+
+// ========== TOAST ==========
+
+let toastTimer = null;
+function showToast(message, duration) {
+  duration = duration || 3000;
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.classList.remove('show'); }, duration);
+}
+
+// ========== UTILITY ==========
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ========== INIT ==========
+
 async function init() {
   const base = window.location.protocol === 'file:' ? './data/' : '/data/';
 
@@ -480,6 +1088,9 @@ async function init() {
   if (zipResp && zipResp.ok) {
     try { zipCoords = await zipResp.json(); } catch (e) { zipCoords = {}; }
   }
+
+  // Load saved lists
+  loadListsFromStorage();
 
   populateStateDropdown();
   buildTableHead();
@@ -524,6 +1135,44 @@ async function init() {
       document.getElementById('col-picker-overlay').classList.remove('open');
       syncColumnVisibility();
       renderTable();
+    }
+  });
+
+  // Selection bar
+  document.getElementById('btn-add-to-list').addEventListener('click', showAddToListModal);
+  document.getElementById('btn-clear-selection').addEventListener('click', clearSelection);
+
+  // Add to list modal
+  document.getElementById('add-list-confirm').addEventListener('click', handleAddToList);
+  document.getElementById('add-list-cancel').addEventListener('click', hideAddToListModal);
+  document.getElementById('add-list-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) hideAddToListModal();
+  });
+
+  // List library modal
+  document.getElementById('btn-lists').addEventListener('click', showListLibrary);
+  document.getElementById('lib-close').addEventListener('click', hideListLibrary);
+  document.getElementById('list-library-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) hideListLibrary();
+  });
+
+  // List view bar
+  document.getElementById('btn-back-explorer').addEventListener('click', closeListView);
+  document.getElementById('btn-remove-from-list').addEventListener('click', removeSelectedFromList);
+  document.getElementById('btn-export-list').addEventListener('click', () => {
+    if (activeListView) exportListCSV(activeListView);
+  });
+
+  // Escape key closes modals
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      hideAddToListModal();
+      hideListLibrary();
+      if (document.getElementById('col-picker-overlay').classList.contains('open')) {
+        document.getElementById('col-picker-overlay').classList.remove('open');
+        syncColumnVisibility();
+        renderTable();
+      }
     }
   });
 }
@@ -595,6 +1244,7 @@ function clearAll() {
   const distCol = COLUMNS.find(c => c.key === '_distanceMi');
   distCol.visible = false;
   for (const row of allRows) row._distanceMi = null;
+  clearSelection();
   buildTableHead();
   buildColPicker();
   currentPage = 0;
@@ -666,9 +1316,13 @@ function handleSort(colIndex) {
     sortCol = colIndex;
     sortDir = 'asc';
   }
-  document.querySelectorAll('#table-head th').forEach((th, i) => {
+  // Update sort indicators (skip checkbox th at index 0)
+  document.querySelectorAll('#table-head th').forEach(th => {
     th.classList.remove('sort-asc', 'sort-desc');
-    if (i === sortCol) th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+    const ci = th.dataset.colIndex;
+    if (ci !== undefined && parseInt(ci) === sortCol) {
+      th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+    }
   });
   applySortToFiltered();
   currentPage = 0;
@@ -751,9 +1405,22 @@ function updateDashboard() {
 function buildTableHead() {
   const tr = document.getElementById('table-head');
   tr.innerHTML = '';
+
+  // Checkbox column header
+  const thCb = document.createElement('th');
+  thCb.className = 'cb-col';
+  thCb.innerHTML = '<input type="checkbox" id="select-all-cb">';
+  thCb.querySelector('input').addEventListener('change', toggleSelectAll);
+  thCb.addEventListener('click', (e) => {
+    if (e.target.tagName !== 'INPUT') e.stopPropagation();
+  });
+  tr.appendChild(thCb);
+
+  // Data columns
   COLUMNS.forEach((col, i) => {
     const th = document.createElement('th');
     th.textContent = col.label;
+    th.dataset.colIndex = i;
     th.addEventListener('click', () => handleSort(i));
     if (!col.visible) th.classList.add('hidden-col');
     tr.appendChild(th);
@@ -775,6 +1442,18 @@ function renderTable() {
 
   for (const row of pageRows) {
     const tr = document.createElement('tr');
+
+    // Checkbox cell
+    const tdCb = document.createElement('td');
+    tdCb.className = 'cb-col';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = selectedNPIs.has(row.NPI);
+    cb.addEventListener('change', () => toggleSelectRow(row.NPI));
+    tdCb.appendChild(cb);
+    tr.appendChild(tdCb);
+
+    // Data cells
     for (const col of COLUMNS) {
       const td = document.createElement('td');
       if (!col.visible) td.classList.add('hidden-col');
@@ -792,9 +1471,24 @@ function renderTable() {
     tbody.appendChild(tr);
   }
 
-  document.getElementById('row-info').textContent = filteredRows.length === 0
-    ? 'No matching doctors'
-    : 'Rows ' + (start+1).toLocaleString() + '\u2013' + end.toLocaleString() + ' of ' + filteredRows.length.toLocaleString();
+  // Update select-all checkbox
+  const selectAllCb = document.getElementById('select-all-cb');
+  if (selectAllCb) selectAllCb.checked = isAllPageSelected() && pageRows.length > 0;
+
+  // Update selection bar
+  updateSelectionBar();
+
+  // Row info
+  if (activeListView) {
+    const list = savedLists[activeListView];
+    document.getElementById('row-info').textContent = filteredRows.length === 0
+      ? 'List is empty'
+      : 'Rows ' + (start+1).toLocaleString() + '\u2013' + end.toLocaleString() + ' of ' + filteredRows.length.toLocaleString() + ' in list';
+  } else {
+    document.getElementById('row-info').textContent = filteredRows.length === 0
+      ? 'No matching doctors'
+      : 'Rows ' + (start+1).toLocaleString() + '\u2013' + end.toLocaleString() + ' of ' + filteredRows.length.toLocaleString();
+  }
 
   renderPagination(totalPages);
 }
@@ -862,12 +1556,21 @@ function syncColumnVisibility() {
     const i = parseInt(cb.dataset.col);
     COLUMNS[i].visible = cb.checked;
   });
+  // Skip first th/td (checkbox column) when syncing visibility
   const ths = document.querySelectorAll('#table-head th');
-  ths.forEach((th, i) => th.classList.toggle('hidden-col', !COLUMNS[i].visible));
+  ths.forEach(th => {
+    const ci = th.dataset.colIndex;
+    if (ci !== undefined) {
+      th.classList.toggle('hidden-col', !COLUMNS[parseInt(ci)].visible);
+    }
+  });
   const trs = document.querySelectorAll('#table-body tr');
   trs.forEach(tr => {
     const tds = tr.querySelectorAll('td');
-    tds.forEach((td, i) => td.classList.toggle('hidden-col', !COLUMNS[i].visible));
+    // Skip first td (checkbox), iterate remaining
+    for (let i = 1; i < tds.length; i++) {
+      tds[i].classList.toggle('hidden-col', !COLUMNS[i - 1].visible);
+    }
   });
 }
 
